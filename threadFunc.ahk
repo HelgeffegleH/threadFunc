@@ -33,7 +33,7 @@
 		this.settingFuncs:=[]
 		for fn, params in set {										; Make array of func objects to call in the new thread.
 			params:=IsObject(params)?params:StrSplit(params,",")
-			fn:=IsObject(fn)?fn:func(fn)
+			fn:=IsObject(fn)?fn:func(fn)							; Mostly intended to fit v2.
 			this.settingFuncs[fn]:=params							; Keep all f/bf objects in the settingFuncs arrays.
 		}
 		return
