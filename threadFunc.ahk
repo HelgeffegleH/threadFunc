@@ -11,17 +11,18 @@
 		this.mute:=mute												; Set to true to suppress exceptions. True is default.
 	}
 	call(params*){
+		static cc := A_PtrSize == 4 ? "cdecl int" : "int"
 		local retId,el,thisPtr,rc,success,ret
 		retId:=++this.retId											; Increment the retId.
 		el:=ErrorLevel												; Save the errorlevel for the calling thread.
 		thisPtr:=&this
-		success:=DllCall(rc:=registercallback(this.newThread), "Ptr", thisPtr, "Ptr", &params, "Uint", retId)	; Call in a new thread.
+		success:=DllCall(rc:=registercallback(this.newThread), "Ptr", thisPtr, "Ptr", &params, "Uint", retId, cc)	; Call in a new thread.
 		this.GlobalFree(rc)											; Free memory.
 		ErrorLevel:=el												; Restore the calling threads errorlevel.
 		if success
 			ret:=this.retVals[retId], this.retVals.Delete(retId)	; Fetch the return value, and remove it from the array.
 		return success ? ret : this.failRet							; Return it.
-	}
+	}	
 	bind(params*){
 		return this.boundParams := params 							; These params will be passed first when "this" threadFunc is called
 	}
