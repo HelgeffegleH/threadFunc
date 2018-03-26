@@ -11,13 +11,13 @@
 		this.mute:=mute												; Set to true to suppress exceptions. True is default.
 	}
 	call(params*){
-		local retId,el,thisPtr,rc,success,ret
+		local
 		retId:=++this.retId											; Increment the retId.
 		el:=ErrorLevel												; Save the errorlevel for the calling thread.
-		thisPtr:=&this
-		success:=DllCall(rc:=registercallback(this.newThread,"",3), "Ptr", thisPtr, "Ptr", &params, "Uint", retId)	; Call in a new thread.
-		this.GlobalFree(rc)											; Free memory.
+		success:=DllCall(rc:=callbackcreate(this.newThread.bind(this, params, retId),,3), "int64")	; Call in a new thread.
+		callbackfree(rc)											; Free memory.
 		ErrorLevel:=el												; Restore the calling threads errorlevel.
+		
 		if success
 			ret:=this.retVals[retId], this.retVals.Delete(retId)	; Fetch the return value, and remove it from the array.
 		return success ? ret : this.failRet							; Return it.
@@ -39,13 +39,9 @@
 		return
 	}
 	; Internal methods
-	newThread(pParams*){
-		local params,retId,sFn,sParams,combinedParams
+	newThread(params, retId){
+		local
 		; This is in a new thread.
-		; Prepare input parameters
-		this	:= Object(NumGet(pParams+0, -A_PtrSize, "Ptr"))		; Context.
-		params	:= Object(NumGet(pParams+0, 		 0, "Ptr"))		; call paramters.
-		retId	:= 		  NumGet(pParams+0,  A_PtrSize, "Uint")		; Specific position in return array.
 		; Prepare thread settings
 		if this.settingFuncs
 			for sFn, sParams in this.settingFuncs
@@ -57,20 +53,5 @@
 		combinedParams.Push(params*)								; The "call" params.
 		this.retVals[retId]:=this.fn.call(combinedParams*)			; Call the function and store the return in this.retVals[retId].
 		return true													; Return true to indicate success.
-	}
-	; Free memory functions.
-	GlobalFree(hMem){
-		local h
-		; URL:
-		;	- https://msdn.microsoft.com/en-us/library/windows/desktop/aa366579(v=vs.85).aspx (GlobalFree function)
-		h:=DllCall("Kernel32.dll\GlobalFree", "Ptr", hMem, "Ptr")
-		if h {
-			this.lastError:=Exception("GlobalFree failed: " A_LastError)
-			if this.mute
-				return this.lastError
-			else
-				throw this.lastError
-		}
-		return h
 	}
 }
