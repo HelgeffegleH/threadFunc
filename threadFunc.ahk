@@ -14,10 +14,9 @@
 		local
 		retId:=++this.retId											; Increment the retId.
 		el:=ErrorLevel												; Save the errorlevel for the calling thread.
-		success:=DllCall(rc:=callbackcreate(this.newThread.bind(this, params, retId),,3), "int64")	; Call in a new thread.
+		success:=DllCall(rc:=callbackcreate(this.newThread.bind(this, params, retId),,0))	; Call in a new thread.		
 		callbackfree(rc)											; Free memory.
 		ErrorLevel:=el												; Restore the calling threads errorlevel.
-		
 		if success
 			ret:=this.retVals[retId], this.retVals.Delete(retId)	; Fetch the return value, and remove it from the array.
 		return success ? ret : this.failRet							; Return it.
@@ -26,7 +25,7 @@
 		return this.boundParams := params 							; These params will be passed first when "this" threadFunc is called
 	}
 	setThreadSettings(set:=""){
-		local fn, params
+		local
 		this.settingFuncs:=""
 		if (set="")													; thread settings cleared.
 			return
